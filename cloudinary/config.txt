@@ -1,0 +1,15 @@
+export CLOUDINARY_URL=cloudinary://API-Key:API-Secret@Cloud-name
+
+在運行檔案前 先將下面指令輸入CMD 
+[請至申請好的帳號dashboard中找到對應的值複製貼上]
+
+export CLOUDINARY_CLOUD_NAME=""
+export CLOUDINARY_API_KEY=""
+export CLOUDINARY_API_SECRET=""
+export CLOUDINARY_URL=http://res.cloudinary.com/yourname
+
+
+======
+可用以下WINDOWS CMD 測試下載剛剛上傳的圖片
+powershell -command "& { iwr https://res.cloudinary.com/yourname/image/upload/v12345678/name.jpg -OutFile name.jpg }"
+

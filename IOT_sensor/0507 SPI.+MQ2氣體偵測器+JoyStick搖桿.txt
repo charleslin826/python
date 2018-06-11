@@ -1,0 +1,165 @@
+
+==============
+開啟SPI通訊協定
+sudo raspi-config
+
+==============
+0507透過讀取SPI上每個Port的值 
+第三個Port是MQ2氣體偵測器 
+
+###20180507 SPI的Library須更新!!! 否則無法正常顯示 (值域0~1024 正常為100以內)
+MCP3008 ADC
+[https://learn.adafruit.com/raspberry-pi-analog-to-digital-converters/mcp3008]
+sudo apt-get update
+sudo apt-get install build-essential python-dev python-smbus git
+cd ~/charles/MQ2/
+git clone https://github.com/adafruit/Adafruit_Python_MCP3008.git
+cd Adafruit_Python_MCP3008
+sudo python setup.py install
+cd ~/charles/MQ2/Adafruit_Python_MCP3008/examples 
+vi simpletest.py
+***把軟體模擬改硬體
+# Software SPI configuration:
+ 13 #CLK  = 18
+ 14 #MISO = 23
+ 15 #MOSI = 24
+ 16 #CS   = 25
+ 17 #mcp = Adafruit_MCP3008.MCP3008(clk=CLK, cs=CS, miso=MISO, mosi=MOSI)
+ 18
+ 19 # Hardware SPI configuration:
+ 20 SPI_PORT   = 0
+ 21 SPI_DEVICE = 0
+ 22 mcp = Adafruit_MCP3008.MCP3008(spi=SPI.SpiDev(SPI_PORT, SPI_DEVICE))
+
+***********************
+>> python simpletest.py
+|    0 |    1 |    2 |    3 |    4 |    5 |    6 |    7 |
+---------------------------------------------------------
+|    4 |  472 |  499 |   66 |   30 |    0 |    0 |    1 |
+|    4 |  471 |  500 |   66 |   30 |    0 |    0 |    1 |
+|    0 |  471 |  498 |   66 |   26 |    0 |    0 |    0 |
+|    0 |  472 |  499 |   66 |   25 |    0 |    0 |    0 |
+|    0 |  471 |  498 |   66 |   25 |    0 |    0 |    0 |
+....
+port 0.1.2      是 JoyStick搖桿
+port 3 		是MQ2 氣體偵測
+
+*******************************************
+0507上傳ThinkSpeaker物聯網平台
+>>cd ~/charles/charles0430/thinkspeak 
+>>vi http_get.py
+把上面的simpletest.py的CODE複製過來並修改如下幾行
+16     mcp = Adafruit_MCP3008.MCP3008(spi=SPI.SpiDev(SPI_PORT, SPI_DEVICE))
+36     values = str(mcp.read_adc(3))
+37     print values
+38     f = urllib2.urlopen(baseUrl + "&field1="+RH+"&field2="+T+"&field3="+values)
+
+>>./http_get.py EKAV2U7DG3H6SSY4
+starting...
+25.0
+69.0
+52
+HTTP Response: 366
+....[請到thinkSpeaker平台上看是否有接收到]
+
+
+---下面是http_get.py全部程式碼
+  1 #!/usr/bin/python
+  2
+  3 import sys
+  4 import urllib2
+  5 import RPi.GPIO as GPIO
+  6 import Adafruit_DHT
+  7 from time import sleep
+  8 import Adafruit_GPIO.SPI as SPI
+  9 import Adafruit_MCP3008
+ 10
+ 11
+ 12
+ 13 # Hardware SPI configuration:
+ 14 SPI_PORT   = 0
+ 15 SPI_DEVICE = 0
+ 16 mcp = Adafruit_MCP3008.MCP3008(spi=SPI.SpiDev(SPI_PORT, SPI_DEVICE))
+ 17
+ 18
+ 19
+ 20 def getSensorData():
+ 21     RH, T = Adafruit_DHT.read_retry(Adafruit_DHT.DHT11, 23)
+ 22     # return dict
+ 23     return (str(RH), str(T))
+ 24
+ 25     #use sys.argv if needed
+ 26 if len(sys.argv) < 2:
+ 27     print('Usage: python http_get.py PRIVATE_KEY')
+ 28     exit(0)
+ 29
+ 30 print 'starting...'
+ 31 baseUrl = 'https://api.thingspeak.com/update?api_key=%s' % sys.argv[1]
+ 32 while True:
+ 33     RH, T = getSensorData()
+ 34     print T
+ 35     print RH
+ 36     values = str(mcp.read_adc(3))
+ 37     print values
+ 38     f = urllib2.urlopen(baseUrl + "&field1="+RH+"&field2="+T+"&field3="+values)
+ 39     print "HTTP Response: " + f.read()
+ 40     f.close()
+ 41     sleep(1)
+
+------------去改原本老師給的程式碼也可以跑----
+~/charles/MQ2 $ ./getGasValue.py
+更新:
+  6 import Adafruit_GPIO.SPI as SPI
+  7 import Adafruit_MCP3008
+ 14 SPI_PORT   = 0
+ 15 SPI_DEVICE = 0
+ 16 mcp = Adafruit_MCP3008.MCP3008(spi=SPI.SpiDev(SPI_PORT, SPI_DEVICE))
+ 31     tmp4 = int(round(mcp.read_adc(3) / 1.024)) # MQ2 in port 3
+註解掉舊的:
+ 4 #舊的錯的import spidev #使用SPI通訊協定(和I2C UART一樣都是通訊協定)
+ 10 #spi = spidev.SpiDev()
+ 11 #spi.open(0, 0)
+
+完成後程式碼:
+ #!/usr/bin/python
+  2 #coding=utf-8
+  3 #  讀取MQ2氣體偵測數值
+  4 #舊的錯的import spidev #使用SPI通訊協定(和I2C UART一樣都是通訊協定)
+  5 import time
+  6 import Adafruit_GPIO.SPI as SPI
+  7 import Adafruit_MCP3008
+  8
+  9
+ 10 #spi = spidev.SpiDev()
+ 11 #spi.open(0, 0)
+ 12 #count =0
+ 13
+ 14 SPI_PORT   = 0
+ 15 SPI_DEVICE = 0
+ 16 mcp = Adafruit_MCP3008.MCP3008(spi=SPI.SpiDev(SPI_PORT, SPI_DEVICE))
+ 17
+ 18
+ 19 def readadc(adcnum):
+ 20     if adcnum > 7 or adcnum < 0:
+ 21         print "wrong port num"
+ 22         return -1
+ 23     r = spi.xfer2([1, 8 + adcnum<< 4, 0])
+ 24     adcount = ((r[1] & 3) << 8) + r[2]
+ 25     return adcount
+ 26
+ 27 while True:
+ 28     #tmp1 = int(round(readadc(0) / 1.024))
+ 29     #tmp2 = int(round(readadc(1) / 1.024))
+ 30     #tmp3 = int(round(readadc(2) / 1.024))
+ 31     tmp4 = int(round(mcp.read_adc(3) / 1.024)) # MQ2 in port 3
+ 32     print "Gas value = ", tmp4
+ 33     #count = count + 1
+ 34     time.sleep(1)
+~
+
+
+./getGasValue.py
+Gas value =  49
+Gas value =  49
+Gas value =  50
+Gas value =  53
