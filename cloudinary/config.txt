@@ -1,7 +1,10 @@
-export CLOUDINARY_URL=cloudinary://API-Key:API-Secret@Cloud-name
+sudo python2.7 -m pip install cloudinary
+python
+>>import cloudinary
+>>no error = OK
 
-�b�B���ɮ׫e ���N�U�����O��JCMD 
-[�ЦܥӽЦn���b��dashboard�����������Ƚƻs�K�W]
+在運行檔案前 先將下面指令輸入CMD 
+[請至申請好的帳號dashboard中找到對應的值複製貼上]
 
 export CLOUDINARY_CLOUD_NAME=""
 export CLOUDINARY_API_KEY=""
@@ -9,7 +12,18 @@ export CLOUDINARY_API_SECRET=""
 export CLOUDINARY_URL=http://res.cloudinary.com/yourname
 
 
+export CLOUDINARY_URL=cloudinary://API-Key:API-Secret@Cloud-name
+
 ======
-�i�ΥH�UWINDOWS CMD ���դU�����W�Ǫ��Ϥ�
+可用以下WINDOWS CMD 測試下載剛剛上傳的圖片
 powershell -command "& { iwr https://res.cloudinary.com/yourname/image/upload/v12345678/name.jpg -OutFile name.jpg }"
 
+======
+複製以下到window的CMD中可查詢json <記得先解壓curl 然後放到系統環境變數(PATH)中>
+curl "https://API_KEY:API_SECRET@api.cloudinary.com/v1_1/CLOUD_NAME/resources/image"
+
+======
+Android Studio也可以藉由創立一個新的空白專案測試取回json
+@MainActivity
+  Intent browseIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("https://API_KEY:API_SECRET@api.cloudinary.com/v1_1/CLOUD_NAME/resources/image"));
+  startActivity(browseIntent);
